@@ -1,0 +1,29 @@
+FROM alpine:latest
+
+# Install required packages
+RUN apk add --no-cache bash bash-completion cosign docker-cli make uuidgen
+
+# Used to create correct user inside container
+ARG UID
+ARG GID
+ARG DOCKER_GROUP
+ARG NAME=engineer
+
+# Here's what's happening below:
+#   - Create group with GID and NAME from args
+#   - Create user with UID and NAME from args, and add to new group
+#   - Create docker group with the name GID as arg DOCKER_GROUP
+#   - Add user to the docker group
+RUN addgroup -S -g ${GID} ${NAME} && \
+    adduser -S ${NAME} -u ${UID} -G ${NAME} && \
+    addgroup -S -g ${DOCKER_GROUP} docker && \
+    adduser ${NAME} docker
+
+# Now that we have a valid user, use it
+USER ${NAME}
+
+# Use bash because it's nice
+ENTRYPOINT [ "/bin/bash" ]
+
+# Because I don't want to have to type it every time
+ENV COSIGN_PASSWORD=12345
